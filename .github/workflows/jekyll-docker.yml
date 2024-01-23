@@ -66,6 +66,12 @@ jobs:
         latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
 
+        # Check if the current version follows the semantic versioning format
+        if ! [[ $currentVersion =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid semantic version format. Starting from v0.1.0"
+          currentVersion="v0.0.0"
+        fi
+
         echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
     - name: Increment version
@@ -85,10 +91,12 @@ jobs:
             major=$((major+1))
             minor=0
             patch=0
+            newVersion="v${major}.${minor}.${patch}"
             ;;
           MINOR)
             minor=$((minor+1))
             patch=0
+            newVersion="v${major}.${minor}.${patch}"
             ;;
           BETA)
             if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
@@ -98,10 +106,10 @@ jobs:
             ;;
           PATCH)
             patch=$((patch+1))
+            newVersion="v${major}.${minor}.${patch}"
             ;;
         esac
-
-        newVersion="v${major}.${minor}.${patch}"
+        
         echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
     - name: Tag and push new version
