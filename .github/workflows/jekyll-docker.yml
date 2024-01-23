@@ -240,3 +240,8 @@ jobs:
         # create and push github tag
         git tag $NEW_TAG
         git push origin $NEW_TAG
+
+        # Create GitHub release
+        gh release create $NEW_TAG -t "$NEW_TAG" -n "Release $NEW_TAG"
+
+        echo "GitHub release created for tag: $NEW_TAG"
