@@ -101,7 +101,7 @@ jobs:
             ;;
         esac
 
-        newVersion="${major}.${minor}.${patch}"
+        newVersion="v${major}.${minor}.${patch}"
         echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
     - name: Tag and push new version
