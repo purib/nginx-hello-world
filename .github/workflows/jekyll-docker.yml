@@ -71,7 +71,7 @@ jobs:
     - name: Increment version
       id: increment-version
       run: |
-        echo "Using current version $CURRENT_VERSION"
+        echo "Using current version ${{ env.CURRENT_VERSION}"
         currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ github.event.inputs.ReleaseType }}
 
