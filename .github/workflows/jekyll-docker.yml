@@ -48,7 +48,11 @@ jobs:
   deploy:
     name: Deploy
     environment: ${{ github.event.inputs.Environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   
+    defaults:
+      run:
+        shell: bash -l {0}
+        
 
     steps:
 
@@ -63,14 +67,23 @@ jobs:
       id: determine-version
       run: |
         git fetch --tags
-        latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        latestTag=$(git describe --tags --abbrev=0 2>/dev/null)
         currentVersion=${latestTag}
-        
+
+        # Check if the current version does not follow the semantic versioning format
+        if ! [[ $currentVersion =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Invalid semantic version format. Starting from v0.1.0"
+          currentVersion="v0.1.0"
+        fi
+
         echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
+    - name: Increment version
+      id: increment-version
+      run: |
         releaseType=${{ github.event.inputs.ReleaseType }}
 
-        IFS='.' read -r -a versionComponents <<< "$currentVersion"
+        IFS='.' read -r -a versionComponents <<< "${CURRENT_VERSION:1}"
         major=${versionComponents[0]}
         minor=${versionComponents[1]}
         patch=${versionComponents[2]}
@@ -102,18 +115,30 @@ jobs:
         
         echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
-        git tag $newVersion
-        git push origin $newVersion
+    - name: Check if tag already exists
+      id: check-tag
+      run: |
+        if git rev-parse -q --verify "refs/tags/${NEW_VERSION}"" >/dev/null; then
+          echo "Tag ${NEW_VERSION}" already exists."
+          echo "EXIT_CODE=1" >> $GITHUB_ENV
+        else
+          echo "Tag ${NEW_VERSION}"n does not exist."
+          echo "EXIT_CODE=0" >> $GITHUB_ENV
+        fi
+
+    - name: Tag and push new version
+      run: |
+        git tag ${NEW_VERSION}
+        git push origin ${NEW_VERSION}
 
     - name: Create GitHub release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        newVersion=${{ env.NEW_VERSION }}
-        releaseNotes="Release $newVersion"
+        releaseNotes="Release ${NEW_VERSION}"
 
         # Check if the release already exists
-        if ! gh release view $newVersion >/dev/null 2>&1; then
-          gh release create $newVersion -t "$newVersion" -n "$releaseNotes"
+        if ! gh release view ${NEW_VERSION} >/dev/null 2>&1; then
+          gh release create ${NEW_VERSION} -t ${NEW_VERSION} -n "$releaseNotes"
         fi
 
