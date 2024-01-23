@@ -215,7 +215,7 @@ jobs:
 
     - name: Create github tag for test env 
       id: tagTest
-      if: ${{ env.ENVIRONMENT == 'test' }} 
+      # if: ${{ env.ENVIRONMENT == 'test' }} 
       run: |
 
         tag=${{ env.RC }}
