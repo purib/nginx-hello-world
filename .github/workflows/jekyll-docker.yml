@@ -26,10 +26,12 @@ on:
         type: choice
         description: 'Type of Release'
         required: true
+        default: PATCH
         options:
         - MAJOR
         - MINOR
         - PATCH
+        - BETA
       Release:
         description: 'Select the release name'
         required: false
@@ -256,62 +258,54 @@ jobs:
 
     #     echo "GitHub release created for tag: $NEW_TAG"
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
 
-    - name: Create GitHub tag and release for test env
-      id: tagAndReleaseTest
-      # if: ${{ env.ENVIRONMENT == 'test' }}
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install dependencies
+      run: npm install
+
+    - name: Determine current version
+      id: determine-version
+      run: echo "::set-output name=VERSION::$(npm version --json)"
+
+    - name: Increment version
+      id: increment-version
       run: |
-        tag=${{ env.RC }}
+        currentVersion=${{ steps.determine-version.outputs.VERSION }}
         releaseType=${{ inputs.ReleaseType }}
 
-        # Determine semantic version components
-        gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
-        if [ x"$gitTag" == x ]; then
-          MAJOR=1
-          MINOR=0
-          PATCH=0
-        else
-          IFS='.' read -r -a versionComponents <<< "$gitTag"
-          MAJOR=${versionComponents[0]}
-          MINOR=${versionComponents[1]}
-          PATCH=${versionComponents[2]}
-        fi
+        IFS='.' read -r -a versionComponents <<< "$currentVersion"
+        major=${versionComponents[0]}
+        minor=${versionComponents[1]}
+        patch=${versionComponents[2]}
+        betaCount=0
 
-        # Increment version components based on ReleaseType
         case $releaseType in
           MAJOR)
-            MAJOR=$((MAJOR+1))
-            MINOR=0
-            PATCH=0
+            major=$((major+1))
+            minor=0
+            patch=0
             ;;
           MINOR)
-            MINOR=$((MINOR+1))
-            PATCH=0
+            minor=$((minor+1))
+            patch=0
             ;;
-          PATCH)
-            PATCH=$((PATCH+1))
+          BETA)
+            betaCount=$((betaCount+1))
+            newVersion="${major}.${minor}.${patch}-beta.${betaCount}"
             ;;
           *)
-            echo "Invalid ReleaseType provided. Please choose MAJOR, MINOR, or PATCH."
-            exit 1
+            patch=$((patch+1))
             ;;
         esac
 
-        # Create semantic version tag
-        NEW_TAG=${MAJOR}.${MINOR}.${PATCH}
-        echo "New GitHub and image tag: $NEW_TAG"
+        newVersion="${major}.${minor}.${patch}"
+        echo "::set-output name=NEW_VERSION::$newVersion"
 
-        # Tag and push docker image
-        # docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
-        # docker push ${{ env.IMAGE_URI }}:$NEW_TAG
-
-        # Create and push GitHub tag
-        git tag $NEW_TAG
-        git push origin $NEW_TAG
-
-        # Create GitHub release with incremented version
-        gh release create $NEW_TAG -t "$NEW_TAG" -n "Release $NEW_TAG"
-
-        echo "GitHub release created for tag: $NEW_TAG"
+    - name: Tag and push new version
+      run: |
+        newVersion=${{ steps.increment-version.outputs.NEW_VERSION }}
+        git tag $newVersion
+        git push origin $newVersion
