@@ -68,7 +68,7 @@ jobs:
         latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
 
-        echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
+        echo "CURRENT_VERSION=$currentVersion"
 
         releaseType=${{ github.event.inputs.ReleaseType }}
 
@@ -84,13 +84,13 @@ jobs:
             minor=0
             patch=0
             newVersion="v${major}.${minor}.${patch}"
-            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
+            echo "NEW_VERSION=$newVersion"
             ;;
           MINOR)
             minor=$((minor+1))
             patch=0
             newVersion="v${major}.${minor}.${patch}"
-            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
+            echo "NEW_VERSION=$newVersion"
             ;;
           BETA)
             if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
@@ -101,11 +101,9 @@ jobs:
           *)
             patch=$((patch+1))
             newVersion="v${major}.${minor}.${patch}"
-            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
+            echo "NEW_VERSION=$newVersion"
             ;;
         esac
-
-        echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
         git tag $newVersion
         git push origin $newVersion
