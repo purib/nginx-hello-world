@@ -1,4 +1,4 @@
-name: Semantic Versioning
+name: Jekyll site CI
 
 on:
   workflow_dispatch:
@@ -49,10 +49,6 @@ jobs:
     name: Deploy
     environment: ${{ github.event.inputs.Environment }}
     runs-on: ubuntu-latest   
-    defaults:
-      run:
-        shell: bash -l {0}
-        
 
     steps:
 
@@ -63,20 +59,22 @@ jobs:
         -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
         jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
 
-    - name: Deploy versioning
+    - name: Determine current version
       id: determine-version
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git fetch --tags
-        latestTag=$(git describe --tags --abbrev=0 2>/dev/null)
+        latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
 
         echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
+    - name: Increment version
+      id: increment-version
+      run: |
+        currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ github.event.inputs.ReleaseType }}
 
-        IFS='.' read -r -a versionComponents <<< "${CURRENT_VERSION:1}"
+        IFS='.' read -r -a versionComponents <<< "$currentVersion"
         major=${versionComponents[0]}
         minor=${versionComponents[1]}
         patch=${versionComponents[2]}
@@ -87,32 +85,46 @@ jobs:
             major=$((major+1))
             minor=0
             patch=0
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
+            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
           MINOR)
             minor=$((minor+1))
             patch=0
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
+            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
           BETA)
             if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
               betaCount=$((BASH_REMATCH[1]+1))
             fi
-            newVersion="v${major}.${minor}.${patch}-beta.${betaCount}"
+            newVersion="${major}.${minor}.${patch}-beta.${betaCount}"
             ;;
-          PATCH)
+          *)
             patch=$((patch+1))
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
+            echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
         esac
         
         echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
-        git tag ${NEW_VERSION}
-        git push origin ${NEW_VERSION}
+    - name: Tag and push new version
+      run: |
+        newVersion=${{ env.NEW_VERSION }}
+        git tag $newVersion
+        git push origin $newVersion
+
+
+    - name: Create GitHub release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        newVersion=${{ env.NEW_VERSION }}
+        releaseNotes="Release $newVersion"
 
         # Check if the release already exists
-        if ! gh release view ${NEW_VERSION} >/dev/null 2>&1; then
-          gh release create ${NEW_VERSION} -t ${NEW_VERSION} -n "$releaseNotes"
+        if ! gh release view $newVersion >/dev/null 2>&1; then
+          gh release create $newVersion -t "$newVersion" -n "$releaseNotes"
         fi
 
