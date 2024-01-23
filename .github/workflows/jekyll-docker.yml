@@ -1,10 +1,14 @@
 name: Jekyll site CI
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  workflow_dispatch:
+    branches:
+      - master
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
 
   workflow_dispatch:
     inputs:
@@ -86,7 +90,7 @@ jobs:
       id: increment-version
       run: |
         currentVersion=${{ env.CURRENT_VERSION }}
-        releaseType=${{ matrix.ReleaseType }}
+        releaseType=${{ github.event.inputs.ReleaseType }}
 
         IFS='.' read -r -a versionComponents <<< "$currentVersion"
         major=${versionComponents[0]}
@@ -135,7 +139,7 @@ jobs:
         fi
 
     - name: Tag and push new beta version
-      if: steps.check-tag.outputs.TAG_EXISTS != 'true' && matrix.ReleaseType == 'BETA'
+      if: steps.check-tag.outputs.TAG_EXISTS != 'true' && ${{ github.event.inputs.ReleaseType }} == 'BETA'
       run: |
         newVersion=${{ env.NEW_VERSION }}
         git tag $newVersion
@@ -152,3 +156,4 @@ jobs:
         if ! gh release view $newVersion >/dev/null 2>&1; then
           gh release create $newVersion -t "$newVersion" -n "$releaseNotes"
         fi
+
