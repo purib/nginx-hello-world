@@ -83,24 +83,24 @@ jobs:
             major=$((major+1))
             minor=0
             patch=0
-            newVersion="${major}.${minor}.${patch}"
+            newVersion="v${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
           MINOR)
             minor=$((minor+1))
             patch=0
-            newVersion="${major}.${minor}.${patch}"
+            newVersion="v${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
           BETA)
             if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
               betaCount=$((BASH_REMATCH[1]+1))
             fi
-            newVersion="${major}.${minor}.${patch}-beta.${betaCount}"
+            newVersion="v${major}.${minor}.${patch}-beta.${betaCount}"
             ;;
           *)
             patch=$((patch+1))
-            newVersion="${major}.${minor}.${patch}"
+            newVersion="v${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
             ;;
         esac
