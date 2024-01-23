@@ -6,11 +6,40 @@ on:
   pull_request:
     branches: [ "master" ]
 
+  workflow_dispatch:
+    inputs:
+      Environment:
+        type: choice
+        description: 'The environment to deploy to'
+        required: true
+        options:
+        - test
+        - prod
+      ContinueOnError:
+        type: choice
+        description: 'Continue on Snyk and SonarQube scan failures?'
+        required: true
+        options:
+        - false
+        - true
+      Release:
+        description: 'Select the release name'
+        required: false
+        default: 'latest'
+
+permissions:
+  id-token: write
+  contents: write    # This is required for actions/checkout@v3
+
+
+env:
+  SERVICE: openai      
+  RC: RC1
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build the site in the jekyll/builder container
@@ -18,3 +47,186 @@ jobs:
         docker run \
         -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
         jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
+
+  deploy:
+    name: Deploy
+    environment: ${{ github.event.inputs.Environment }}
+    runs-on: ubuntu-latest   
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.Environment == 'test' && 'main' || github.event.inputs.Environment == 'prod' && github.event.inputs.Release }}
+        fetch-depth: 0
+
+    - name: Setup Environment Variables
+      id: envVariables
+      run: |
+        
+        # set the application name
+        APP_NAME=vsl-${{ env.SERVICE }}
+        echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV 
+         # set short commit ID
+        LAST_COMMIT_ID=`git log -n 1 --pretty=format:'%h' -- ${{ env.SERVICE }}`
+        echo "IMAGE_TAG=$LAST_COMMIT_ID" >> $GITHUB_ENV
+
+        # define default tags from defaultTags.json
+        DEFAULT_TAGS=`envsubst < defaultTags.json`
+        DEFAULT_TAGS=`echo $DEFAULT_TAGS | tr -d '\n[]' | tr -s " "`
+        echo "Default tags $DEFAULT_TAGS"
+        echo "DEFAULT_TAGS=$DEFAULT_TAGS" >> $GITHUB_ENV
+
+        # set environment to dev if workflows is triggered automatically
+        if [ "x${{ github.event.inputs.Environment }}x" == "xx" ]; then
+          ENVIRONMENT=dev
+        else
+          ENVIRONMENT=${{ github.event.inputs.Environment }}
+        fi
+        echo "ENVIRONMENT=$ENVIRONMENT" >> $GITHUB_ENV
+
+        if [ "x${{ github.event.inputs.ContinueOnError }}x" == "xx" ]; then
+          CONTINUE_ON_ERROR=false
+        else
+          CONTINUE_ON_ERROR=${{ github.event.inputs.ContinueOnError }}
+        fi
+        echo "CONTINUE_ON_ERROR=$CONTINUE_ON_ERROR" >> $GITHUB_ENV      
+
+        # set cfn stack 
+        if [ -f ${{ env.SERVICE }}/cfn-fargate.yaml ]; then
+          echo "CFN_STACK=${{ env.SERVICE }}/cfn-fargate.yaml" >> $GITHUB_ENV
+        else
+          echo "CFN_STACK=template/cfn-fargate.yaml" >> $GITHUB_ENV
+        fi
+
+        # set stack config file
+        if [ -f ${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME-stack.params ]; then
+          STACK_CONFIG=`cat ${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME-stack.params | tr '\n' ',' `
+          echo "STACK_CONFIG=$STACK_CONFIG" >> $GITHUB_ENV
+        else
+          echo "STACK_CONFIG="Env=${{ env.ENVIRONMENT }}"" >> $GITHUB_ENV
+        fi
+
+        # set environment variables file
+        if [ -f ${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME.env ]; then
+          # ENV_FILE="${{ env.SERVICE }}/$ENVIRONMENT-$APP_NAME.env"
+          ENV_FILE="${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME.env"
+          echo "ENV_FILE=$ENV_FILE" >> $GITHUB_ENV
+        fi
+
+        # set secrets file
+        if [ -f ${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME-secrets.yaml ]; then
+          SECRETS_FILE="${{ env.SERVICE }}/config/$ENVIRONMENT-$APP_NAME-secrets.yaml"
+          echo "SECRETS_FILE=$SECRETS_FILE" >> $GITHUB_ENV
+        fi
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/${{ secrets.OIDC_ROLE_FARGATE }}
+        role-session-name: ${{env.ENVIRONMENT}}-${{env.APP_NAME}}
+        aws-region: ${{ secrets.AWS_REGION }}  
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+     
+    # Build image
+    - name: Build image
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ env.ENVIRONMENT }}-${{ env.APP_NAME }}
+        IMAGE_TAG: ${{ env.IMAGE_TAG }}
+      run: | 
+
+        # create libzip package
+
+        cd utils
+        tar -cvf libzip.tar libzip/    
+        cd .. 
+        cp utils/libzip.tar ${{ env.SERVICE }}/
+
+        # build docker image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ${{ env.SERVICE }} \
+        --build-arg BASE_IMAGE=${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/core-vsl-python3:latest
+
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        
+        echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY" >> $GITHUB_ENV 
+
+    # scan image with snyk
+    - name: Snyk Scan Image
+      id: container-scan
+      continue-on-error: ${{ fromJSON(env.CONTINUE_ON_ERROR) }}
+      uses: snyk/actions/docker@master
+      env: 
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }}
+        args: --file=${{ env.SERVICE }}/Dockerfile --severity-threshold=high
+
+    # create ECR repo if not exists
+    - name: "Create ECR repo"
+      uses: byu-oit/github-action-create-ecr-repo-if-missing@v1
+      with:
+        DOCKER_REPO_NAME: "${{ env.ENVIRONMENT }}-${{ env.APP_NAME }}"
+
+    - name: Push docker image
+      id: pushImage
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ env.ENVIRONMENT }}-${{ env.APP_NAME }}
+  
+      run: |
+        docker push ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }}
+        docker push ${{ env.IMAGE_URI }}:latest
+
+    # # Run CFN Deploy On Our Stack
+    # - name: Deploy to AWS with CloudFormation
+    #   id: deployStack
+    #   uses: aws-actions/aws-cloudformation-github-deploy@v1.0.4
+    #   with:
+    #     name: ${{ env.ENVIRONMENT }}-${{ env.APP_NAME }}
+    #     template: "${{ env.CFN_STACK }}"
+    #     no-fail-on-empty-changeset: "1"
+    #     capabilities: CAPABILITY_NAMED_IAM, CAPABILITY_AUTO_EXPAND  
+    #     tags: '[
+    #     ${{ env.DEFAULT_TAGS }},
+    #     {Key: "Usecase",Value: "${{ env.SERVICE }}"}
+    #     ]'              
+    #     parameter-overrides: >-
+    #       ${{env.STACK_CONFIG}},
+    #       IngressStackName= ${{ env.ENVIRONMENT }}-vsl-ingress,
+    #       EcsStackName=     ${{ env.ENVIRONMENT }}-vsl-ecs-cluster,
+    #       EnvType=              ${{ env.ENVIRONMENT }},
+    #       ImageUri=         ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }},
+    #       PermissionsBoundary=arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:policy/PFE-BASELINE-DelegatedUserPermission-Boundary
+
+    - name: Create github tag for test env 
+      id: tagTest
+      if: ${{ env.ENVIRONMENT == 'test' }} 
+      run: |
+
+        tag=${{ env.RC }}
+
+        gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
+        echo "Latest git tag"
+        echo $gitTag
+        
+        # increate the RC tag by one
+        if [  x"$gitTag" == x ]; then
+          NEW_TAG=${{ env.SERVICE }}-$tag.0
+        else
+          version=${gitTag#${{ env.SERVICE }}-$tag.}
+          NEW_TAG=${{ env.SERVICE }}-$tag.$((version+1))
+        fi
+        echo "New GitHub and image tag :$NEW_TAG"
+
+        # tag and push docker image
+        docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
+        docker push ${{ env.IMAGE_URI }}:$NEW_TAG
+        
+        # create and push github tag
+        git tag $NEW_TAG
+        git push origin $NEW_TAG
