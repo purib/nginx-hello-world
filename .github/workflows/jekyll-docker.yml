@@ -258,17 +258,9 @@ jobs:
 
     #     echo "GitHub release created for tag: $NEW_TAG"
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '14'
-
-    - name: Install dependencies
-      run: npm install
-
     - name: Determine current version
       id: determine-version
-      run: echo "::set-output name=VERSION::$(npm version --json)"
+      run: echo "::set-output name=VERSION::$(git describe --tags --abbrev=0)"
 
     - name: Increment version
       id: increment-version
