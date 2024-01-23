@@ -118,11 +118,11 @@ jobs:
     - name: Check if tag already exists
       id: check-tag
       run: |
-        if git rev-parse -q --verify "refs/tags/${NEW_VERSION}"" >/dev/null; then
-          echo "Tag ${NEW_VERSION}" already exists."
+        if git rev-parse -q --verify "refs/tags/${NEW_VERSION}" >/dev/null; then
+          echo "Tag ${NEW_VERSION} already exists."
           echo "EXIT_CODE=1" >> $GITHUB_ENV
         else
-          echo "Tag ${NEW_VERSION}"n does not exist."
+          echo "Tag ${NEW_VERSION} does not exist."
           echo "EXIT_CODE=0" >> $GITHUB_ENV
         fi
 
