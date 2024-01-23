@@ -74,10 +74,6 @@ jobs:
         
         echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
-    - name: Increment version
-      id: increment-version
-      run: |
-        currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ github.event.inputs.ReleaseType }}
 
         IFS='.' read -r -a versionComponents <<< "$currentVersion"
@@ -112,9 +108,6 @@ jobs:
         
         echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
-    - name: Tag and push new version
-      run: |
-        newVersion=${{ env.NEW_VERSION }}
         git tag $newVersion
         git push origin $newVersion
 
