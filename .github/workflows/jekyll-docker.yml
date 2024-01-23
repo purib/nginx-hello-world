@@ -250,6 +250,8 @@ jobs:
     - name: Create GitHub tag and release for test env
       id: tagAndReleaseTest
       # if: ${{ env.ENVIRONMENT == 'test' }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         tag=${{ env.RC }}
 
