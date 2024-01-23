@@ -63,9 +63,6 @@ jobs:
     name: Deploy
     environment: ${{ github.event.inputs.Environment }}
     runs-on: ubuntu-latest   
-    strategy:
-      matrix:
-        ReleaseType: [MAJOR, MINOR, PATCH, BETA]
 
     steps:
 
