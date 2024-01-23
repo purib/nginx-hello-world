@@ -59,25 +59,15 @@ jobs:
         -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
         jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
 
-    - name: Determine current version
+    - name: Determine version
       id: determine-version
       run: |
         git fetch --tags
-        latestTag=$(git describe --tags --abbrev=0 2>/dev/null)
+        latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
+        
+        echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
-        # Check if the current version follows the semantic versioning format
-        if ! [[ $currentVersion =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Invalid semantic version format. Starting from v0.1.0"
-          currentVersion="v0.0.0"
-        else
-          echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
-        fi
-
-    - name: Increment version
-      id: increment-version
-      run: |
-        currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ github.event.inputs.ReleaseType }}
 
         IFS='.' read -r -a versionComponents <<< "$currentVersion"
