@@ -212,45 +212,31 @@ jobs:
     #       PermissionsBoundary=arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:policy/PFE-BASELINE-DelegatedUserPermission-Boundary
 
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          Changes in this Release
-          - First Change
-          - Second Change
-        draft: false
-        prerelease: false
 
-    # - name: Create github tag for test env 
-    #   id: tagTest
-    #   if: ${{ env.ENVIRONMENT == 'test' }} 
-    #   run: |
+    - name: Create github tag for test env 
+      id: tagTest
+      if: ${{ env.ENVIRONMENT == 'test' }} 
+      run: |
 
-    #     tag=${{ env.RC }}
+        tag=${{ env.RC }}
 
-    #     gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
-    #     echo "Latest git tag"
-    #     echo $gitTag
+        gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
+        echo "Latest git tag"
+        echo $gitTag
         
-    #     # increate the RC tag by one
-    #     if [  x"$gitTag" == x ]; then
-    #       NEW_TAG=${{ env.SERVICE }}-$tag.0
-    #     else
-    #       version=${gitTag#${{ env.SERVICE }}-$tag.}
-    #       NEW_TAG=${{ env.SERVICE }}-$tag.$((version+1))
-    #     fi
-    #     echo "New GitHub and image tag :$NEW_TAG"
+        # increate the RC tag by one
+        if [  x"$gitTag" == x ]; then
+          NEW_TAG=${{ env.SERVICE }}-$tag.0
+        else
+          version=${gitTag#${{ env.SERVICE }}-$tag.}
+          NEW_TAG=${{ env.SERVICE }}-$tag.$((version+1))
+        fi
+        echo "New GitHub and image tag :$NEW_TAG"
 
-    #     # tag and push docker image
-    #     # docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
-    #     # docker push ${{ env.IMAGE_URI }}:$NEW_TAG
+        # tag and push docker image
+        # docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
+        # docker push ${{ env.IMAGE_URI }}:$NEW_TAG
         
-    #     # create and push github tag
-    #     git tag $NEW_TAG
-    #     git push origin $NEW_TAG
+        # create and push github tag
+        git tag $NEW_TAG
+        git push origin $NEW_TAG
