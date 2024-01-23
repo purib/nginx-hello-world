@@ -213,31 +213,74 @@ jobs:
 
 
 
-    - name: Create github tag for test env 
-      id: tagTest
-      # if: ${{ env.ENVIRONMENT == 'test' }} 
-      run: |
+    # - name: Create github tag for test env 
+    #   id: tagTest
+    #   # if: ${{ env.ENVIRONMENT == 'test' }} 
+    #   run: |
 
+    #     tag=${{ env.RC }}
+
+    #     gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
+    #     echo "Latest git tag"
+    #     echo $gitTag
+        
+    #     # increate the RC tag by one
+    #     if [  x"$gitTag" == x ]; then
+    #       NEW_TAG=${{ env.SERVICE }}-$tag.0
+    #     else
+    #       version=${gitTag#${{ env.SERVICE }}-$tag.}
+    #       NEW_TAG=${{ env.SERVICE }}-$tag.$((version+1))
+    #     fi
+    #     echo "New GitHub and image tag :$NEW_TAG"
+
+    #     # tag and push docker image
+    #     # docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
+    #     # docker push ${{ env.IMAGE_URI }}:$NEW_TAG
+        
+    #     # create and push github tag
+    #     git tag $NEW_TAG
+    #     git push origin $NEW_TAG
+
+    #     # Create GitHub release
+    #     gh release create $NEW_TAG -t "$NEW_TAG" -n "Release $NEW_TAG"
+
+    #     echo "GitHub release created for tag: $NEW_TAG"
+
+
+    - name: Create GitHub tag and release for test env
+      id: tagAndReleaseTest
+      # if: ${{ env.ENVIRONMENT == 'test' }}
+      run: |
         tag=${{ env.RC }}
 
         gitTag=`git tag -l | sort -V | grep ${{ env.SERVICE }}-$tag | tail -n 1`
         echo "Latest git tag"
         echo $gitTag
-        
-        # increate the RC tag by one
-        if [  x"$gitTag" == x ]; then
-          NEW_TAG=${{ env.SERVICE }}-$tag.0
-        else
-          version=${gitTag#${{ env.SERVICE }}-$tag.}
-          NEW_TAG=${{ env.SERVICE }}-$tag.$((version+1))
-        fi
-        echo "New GitHub and image tag :$NEW_TAG"
 
-        # tag and push docker image
+        # Determine semantic version components
+        if [ x"$gitTag" == x ]; then
+          MAJOR=1
+          MINOR=0
+          PATCH=0
+        else
+          IFS='.' read -r -a versionComponents <<< "$gitTag"
+          MAJOR=${versionComponents[0]}
+          MINOR=${versionComponents[1]}
+          PATCH=${versionComponents[2]}
+        fi
+
+        # Increase version components
+        PATCH=$((PATCH+1))
+
+        # Create semantic version tag
+        NEW_TAG=${MAJOR}.${MINOR}.${PATCH}
+        echo "New GitHub and image tag: $NEW_TAG"
+
+        # Tag and push docker image
         # docker tag ${{ env.IMAGE_URI }}:${{ env.IMAGE_TAG }} ${{ env.IMAGE_URI }}:$NEW_TAG
         # docker push ${{ env.IMAGE_URI }}:$NEW_TAG
-        
-        # create and push github tag
+
+        # Create and push GitHub tag
         git tag $NEW_TAG
         git push origin $NEW_TAG
 
