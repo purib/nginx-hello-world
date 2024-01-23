@@ -49,6 +49,12 @@ jobs:
     name: Deploy
     environment: ${{ github.event.inputs.Environment }}
     runs-on: ubuntu-latest   
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    env:
+      CURRENT_VERSION: ''
 
     steps:
 
@@ -59,7 +65,7 @@ jobs:
         -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
         jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
 
-    - name: Determine version
+    - name: Determine current version
       id: determine-version
       run: |
         git fetch --tags
@@ -68,6 +74,10 @@ jobs:
         
         echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
+    - name: Increment version
+      id: increment-version
+      run: |
+        currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ github.event.inputs.ReleaseType }}
 
         IFS='.' read -r -a versionComponents <<< "$currentVersion"
