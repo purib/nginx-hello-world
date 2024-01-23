@@ -260,12 +260,17 @@ jobs:
 
     - name: Determine current version
       id: determine-version
-      run: echo "::set-output name=VERSION::$(git describe --tags --abbrev=0)"
+      run: |
+        git fetch --tags
+        latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        currentVersion=${latestTag}
+
+        echo "CURRENT_VERSION=$currentVersion" >> $GITHUB_ENV
 
     - name: Increment version
       id: increment-version
       run: |
-        currentVersion=${{ steps.determine-version.outputs.VERSION }}
+        currentVersion=${{ env.CURRENT_VERSION }}
         releaseType=${{ inputs.ReleaseType }}
 
         IFS='.' read -r -a versionComponents <<< "$currentVersion"
@@ -294,10 +299,10 @@ jobs:
         esac
 
         newVersion="${major}.${minor}.${patch}"
-        echo "::set-output name=NEW_VERSION::$newVersion"
+        echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
     - name: Tag and push new version
       run: |
-        newVersion=${{ steps.increment-version.outputs.NEW_VERSION }}
+        newVersion=${{ env.NEW_VERSION }}
         git tag $newVersion
         git push origin $newVersion
