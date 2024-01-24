@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
     branches:
       - master
+    inputs:
+      deployment_tag: ${{ inputs.deployment_tag }}
 
 jobs:
   release:
@@ -17,12 +19,10 @@ jobs:
         uses: cycjimmy/semantic-release-action@v3
         with:
           dry-run: true  # Only calculate the version, don't create a release
-
-      - name: Build
-        run: npm install && npm run build  # Replace with your build command
+          git-tags: ${{ inputs.deployment_tag }}  # Use deployment tag for versioning
 
       - name: Create release
-        if: success()  # Only create release if the build succeeds
+        if: success()
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -30,5 +30,7 @@ jobs:
           tag_name: ${{ steps.semver.outputs.version }}
           release_name: Release ${{ steps.semver.outputs.version }}
           body: |
+            **Deployed:** ${{ inputs.deployment_tag }}
             **Changes:**
-            - (Add a list of changes here)
+            - (Analyze git history from ${{ inputs.deployment_tag }} and list changes here)
+
