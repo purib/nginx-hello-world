@@ -83,24 +83,24 @@ jobs:
             major=$((major+1))
             minor=0
             patch=0
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion"
             ;;
           MINOR)
             minor=$((minor+1))
             patch=0
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion"
             ;;
           BETA)
             if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
               betaCount=$((BASH_REMATCH[1]+1))
             fi
-            newVersion="v${major}.${minor}.${patch}-beta.${betaCount}"
+            newVersion="${major}.${minor}.${patch}-beta.${betaCount}"
             ;;
           *)
             patch=$((patch+1))
-            newVersion="v${major}.${minor}.${patch}"
+            newVersion="${major}.${minor}.${patch}"
             echo "NEW_VERSION=$newVersion"
             ;;
         esac
