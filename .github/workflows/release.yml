@@ -1,0 +1,34 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to the main branch
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate semantic version
+        id: semver
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          dry-run: true  # Only calculate the version, don't create a release
+
+      - name: Build
+        run: npm install && npm run build  # Replace with your build command
+
+      - name: Create release
+        if: success()  # Only create release if the build succeeds
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.semver.outputs.version }}
+          release_name: Release ${{ steps.semver.outputs.version }}
+          body: |
+            **Changes:**
+            - (Add a list of changes here)
