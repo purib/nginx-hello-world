@@ -65,7 +65,9 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git fetch --tags
-        latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+
+        latestTagCommit=$(git rev-list --tags --max-count=1)
+        latestTag=$(git describe --tags --abbrev=0 $latestTagCommit 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
 
         echo "CURRENT_VERSION=$currentVersion"
