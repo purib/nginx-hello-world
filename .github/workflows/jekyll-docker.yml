@@ -3,7 +3,7 @@ name: Semantic versioning
 on:
   workflow_dispatch:
     branches:
-      - qa
+      - master
     inputs:
       Environment:
         type: choice
