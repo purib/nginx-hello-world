@@ -105,7 +105,7 @@ jobs:
             ;;
         esac
 
-        git tag -a $newVersion -m "Version $newVersion"
+        git tag $newVersion
         git push origin $newVersion
 
         releaseNotes="Release $newVersion"
