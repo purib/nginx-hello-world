@@ -38,15 +38,24 @@ jobs:
       #     echo "Latest tag: $latestTag"
       #     echo "::set-output name=latestTag::$latestTag"
 
+      # - name: Fetch the latest tag
+      #   run: |
+      #     git fetch --tags
+      #     latestTag=$(git tag -l | sort -V | tail -n 1)
+      #     echo "Latest tag: $latestTag" >> $GITHUB_ENV
+
+      # - name: Set output for later steps
+      #   run: echo "::set-output name=latestTag::$latestTag"
+
       - name: Fetch the latest tag
+        id: fetch-tag
         run: |
-          git fetch --tags
           latestTag=$(git tag -l | sort -V | tail -n 1)
-          echo "Latest tag: $latestTag" >> $GITHUB_ENV
+          echo "Latest tag: $latestTag"
+          echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
 
       - name: Set output for later steps
-        run: echo "::set-output name=latestTag::$latestTag"
-
+        run: echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
 
       - name: Determine new version
         id: determine-version
