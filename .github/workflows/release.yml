@@ -28,9 +28,6 @@ jobs:
         with:
           node-version: '14'
 
-      # - name: Install git-semver utility
-      #   run: npm install -g git-semver
-
       - name: Install semver
         run: npm install -g semver
 
