@@ -61,7 +61,8 @@ jobs:
       - name: Determine new version
         id: determine-version
         run: |
-          currentVersion=${{ steps.fetch-latest-tag.outputs.latestTag }}
+          currentVersion=${{ steps.fetch-tag.outputs.LATEST_TAG }}"
+          echo "CurrentVersion=$currentVersion"
           newVersion=$(git semver --increment ${{ github.event_name }} --from $currentVersion)
           echo "New version: $newVersion"
           echo "::set-output name=newVersion::$newVersion"
