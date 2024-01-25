@@ -20,48 +20,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code
-      - uses: actions/checkout@v3
-
-
-      # apt-get install node-semver
-
-      # - uses: wemogy/next-release-version-action@1.0.1
-      #   id: release-version
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     branch: 'release/v1.1'
-
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14'  # Choose the Node.js version you need
+          node-version: '14'
 
-      - name: Install node-semver
-        run: npm install -g semver
+      - name: Install git-semver utility
+        run: npm install -g git-semver
 
-      - name: Check node-semver version
-        run: semver --version
+      - name: Fetch the latest tag
+        id: fetch-latest-tag
+        run: |
+          latestTag=$(git tag -l | sort -V | tail -n 1)
+          echo "Latest tag: $latestTag"
+          echo "::set-output name=latestTag::$latestTag"
 
-      # - uses: actions/setup-node@v4 # Example for Node.js, adjust for your environment
-      #   with:
-      #     node-version: 16
-      # - run: |
-      #     npm install -g git-semver # Install git-semver for history analysis
-      #     git-semver -i --tag-pattern "v*.*.*"
+      - name: Determine new version
+        id: determine-version
+        run: |
+          currentVersion=${{ steps.fetch-latest-tag.outputs.latestTag }}
+          newVersion=$(git semver --increment ${{ github.event_name }} --from $currentVersion)
+          echo "New version: $newVersion"
+          echo "::set-output name=newVersion::$newVersion"
 
-      # # - name: Analyze git history
-      # #   id: analyze-history
-      # #   run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
+      - name: Set version as an environment variable
+        run: echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
 
-      # - name: Extract version information
-      #   id: extract-version
-      #   run: echo "::set-output name=new_version::$(cat ${{ steps.analyze-history.outputs.stdout }} | grep 'next version')"
-
-      # - name: Tag
-      #   uses: K-Phoen/semver-release-action@master
-      #   with:
-      #     release_branch: master
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag and push
+        run: |
+          git tag $RELEASE_VERSION
+          git push origin $RELEASE_VERSION
