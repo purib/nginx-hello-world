@@ -88,8 +88,8 @@ jobs:
       - name: Set version as an environment variable
         run: |
           echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
-          git tag $RELEASE_VERSION
-          git push origin $RELEASE_VERSION
+          git tag $NEW_VERSION
+          git push origin $NEW_VERSION
 
 
       # - name: Tag and push
