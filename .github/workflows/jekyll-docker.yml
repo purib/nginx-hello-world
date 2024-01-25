@@ -59,15 +59,23 @@ jobs:
         -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
         jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
 
+    - name: Fetch the latest tag
+      id: fetch-tag
+      run: |
+        latestTag=$(git tag -l | sort -V | tail -n 1)
+        echo "Latest tag: $latestTag"
+        echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
+
+    - name: Set output for later steps
+      run: echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
+
+
     - name: Create Tags and Releases
       id: deploy-tags-release
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git fetch --tags
 
-        latestTagCommit=$(git rev-list --tags --max-count=1)
-        latestTag=$(git describe --tags --abbrev=0 $latestTagCommit 2>/dev/null || echo "v0.0.0")
         currentVersion=${latestTag}
 
         echo "CURRENT_VERSION=$currentVersion"
