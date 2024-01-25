@@ -1,36 +1,76 @@
-name: Release
+name: Build and Release
 
 on:
   workflow_dispatch:
     branches:
       - master
     inputs:
-      deployment_tag: ${{ inputs.deployment_tag }}
+      ReleaseType:
+        type: choice
+        description: 'Type of Release'
+        required: true
+        options:
+          - MAJOR
+          - MINOR
+          - PATCH
+          - BETA
 
 jobs:
-  release:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the code
       - uses: actions/checkout@v3
 
-      - name: Generate semantic version
-        id: semver
-        uses: cycjimmy/semantic-release-action@v3
+      # Determine the next semantic version based on release type
+      - uses: actions/github-script@v6
+        id: determine-version
         with:
-          dry-run: true  # Only calculate the version, don't create a release
-          git-tags: ${{ inputs.deployment_tag }}  # Use deployment tag for versioning
+          script: |
+            const releaseType = '${{ github.event.inputs.ReleaseType }}';
+            const latestTag = await github.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            const currentVersion = latestTag.data.tag_name.slice(1); // Remove leading 'v'
+            const [major, minor, patch] = currentVersion.split('.').map(Number);
 
-      - name: Create release
-        if: success()
+            let newVersion;
+            switch (releaseType) {
+              case 'MAJOR':
+                newVersion = `${major + 1}.0.0`;
+                break;
+              case 'MINOR':
+                newVersion = `${major}.${minor + 1}.0`;
+                break;
+              case 'PATCH':
+                newVersion = `${major}.${minor}.${patch + 1}`;
+                break;
+              case 'BETA':
+                newVersion = `${major}.${minor}.${patch}-beta.1`;
+                break;
+            }
+
+            core.setOutput('version', newVersion);
+
+      # Set the version as an environment variable
+      - name: Set version environment variable
+        run: echo "RELEASE_VERSION=${{ steps.determine-version.outputs.version }}" >> $GITHUB_ENV
+
+      # # Build the code (replace with your actual build commands)
+      # - name: Build
+      #   run: npm install && npm run build
+
+      # Create a tag and release
+      - name: Create Release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.semver.outputs.version }}
-          release_name: Release ${{ steps.semver.outputs.version }}
+          tag_name: v${{ env.RELEASE_VERSION }}
+          release_name: Release v${{ env.RELEASE_VERSION }}
           body: |
-            **Deployed:** ${{ inputs.deployment_tag }}
-            **Changes:**
-            - (Analyze git history from ${{ inputs.deployment_tag }} and list changes here)
+            **Release Notes:**
 
+            (Add release notes here)
