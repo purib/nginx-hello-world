@@ -42,7 +42,6 @@ jobs:
       - name: Determine new version
         id: determine-version
         run: |
-          echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
           currentVersion=${{ env.LATEST_TAG }}
           releaseType=${{ github.event.inputs.ReleaseType }}
           
