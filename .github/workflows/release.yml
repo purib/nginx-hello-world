@@ -60,6 +60,8 @@ jobs:
 
       - name: Determine new version
         id: determine-version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
           currentVersion=${{ env.LATEST_TAG }}
@@ -91,6 +93,15 @@ jobs:
 
           echo "New version: $newVersion"
           echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
+
+          releaseNotes="Release $newVersion"
+
+          # Check if the release already exists
+          if ! gh release view $newVersion >/dev/null 2>&1; then
+            gh release create $newVersion -t "$newVersion" -n "$releaseNotes"
+          fi
+
+
 
       # - name: Determine new version
       #   id: determine-version
