@@ -28,27 +28,11 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install git-semver utility
-        run: npm install -g git-semver
+      # - name: Install git-semver utility
+      #   run: npm install -g git-semver
 
       - name: Install semver
         run: npm install -g semver
-
-      # - name: Fetch the latest tag
-      #   id: fetch-latest-tag
-      #   run: |
-      #     latestTag=$(git tag -l | sort -V | tail -n 1)
-      #     echo "Latest tag: $latestTag"
-      #     echo "::set-output name=latestTag::$latestTag"
-
-      # - name: Fetch the latest tag
-      #   run: |
-      #     git fetch --tags
-      #     latestTag=$(git tag -l | sort -V | tail -n 1)
-      #     echo "Latest tag: $latestTag" >> $GITHUB_ENV
-
-      # - name: Set output for later steps
-      #   run: echo "::set-output name=latestTag::$latestTag"
 
       - name: Fetch the latest tag
         id: fetch-tag
@@ -92,27 +76,7 @@ jobs:
           echo "New version: $newVersion"
           echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
-
-
-
-      # - name: Determine new version
-      #   id: determine-version
-      #   run: |
-      #     currentVersion=${{ steps.fetch-tag.outputs.LATEST_TAG }}
-      #     echo "Latest tag: $currentVersion"
-      #     newVersion=$(git semver --increment ${{ github.event_name }} --from $currentVersion)
-      #     echo "New version: $newVersion"
-      #     echo "::set-output name=newVersion::$newVersion"
-
-      # - name: Determine new version
-      #   id: determine-version
-      #   run: |
-      #     currentVersion=${{ env.LATEST_TAG }}
-      #     newVersion=$(semver --increment ${{ github.event_name }} --from $currentVersion)
-      #     echo "New version: $newVersion"
-      #     echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
-
-      - name: Set version as an environment variable
+      - name: Create Tag and Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -126,10 +90,3 @@ jobs:
           if ! gh release view $NEW_VERSION >/dev/null 2>&1; then
             gh release create $NEW_VERSION -t "$NEW_VERSION" -n "$releaseNotes"
           fi
-
-
-
-      # - name: Tag and push
-      #   run: |
-      #     git tag $RELEASE_VERSION
-      #     git push origin $RELEASE_VERSION
