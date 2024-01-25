@@ -75,6 +75,14 @@ jobs:
             PATCH)
               newVersion=$(semver --increment patch $currentVersion)
               ;;
+            BETA)
+              if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
+                betaCount=$((BASH_REMATCH[1]+1))
+              else
+                betaCount=1
+              fi
+              newVersion="${currentVersion}-beta.${betaCount}"
+              ;;
             *)
               echo "Invalid ReleaseType provided."
               exit 1
