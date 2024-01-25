@@ -23,23 +23,45 @@ jobs:
       # Checkout the code
       - uses: actions/checkout@v3
 
+
+      # apt-get install node-semver
+
       # - uses: wemogy/next-release-version-action@1.0.1
       #   id: release-version
       #   with:
       #     token: ${{ secrets.GITHUB_TOKEN }}
       #     branch: 'release/v1.1'
 
-      - uses: actions/setup-node@v4 # Example for Node.js, adjust for your environment
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 16
-      - run: |
-          npm install -g git-semver # Install git-semver for history analysis
-          git-semver -i --tag-pattern "v*.*.*"
+          node-version: '14'  # Choose the Node.js version you need
 
-      # - name: Analyze git history
-      #   id: analyze-history
-      #   run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
+      - name: Install node-semver
+        run: npm install -g semver
 
-      - name: Extract version information
-        id: extract-version
-        run: echo "::set-output name=new_version::$(cat ${{ steps.analyze-history.outputs.stdout }} | grep 'next version')"
+      - name: Check node-semver version
+        run: semver --version
+
+      # - uses: actions/setup-node@v4 # Example for Node.js, adjust for your environment
+      #   with:
+      #     node-version: 16
+      # - run: |
+      #     npm install -g git-semver # Install git-semver for history analysis
+      #     git-semver -i --tag-pattern "v*.*.*"
+
+      # # - name: Analyze git history
+      # #   id: analyze-history
+      # #   run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
+
+      # - name: Extract version information
+      #   id: extract-version
+      #   run: echo "::set-output name=new_version::$(cat ${{ steps.analyze-history.outputs.stdout }} | grep 'next version')"
+
+      # - name: Tag
+      #   uses: K-Phoen/semver-release-action@master
+      #   with:
+      #     release_branch: master
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
