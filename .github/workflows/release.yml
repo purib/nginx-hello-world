@@ -56,16 +56,20 @@ jobs:
           echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
 
       - name: Set output for later steps
-        run: echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
-
-      - name: Determine new version
-        id: determine-version
         run: |
-          currentVersion=${{ steps.fetch-tag.outputs.LATEST_TAG }}
-          echo "Latest tag: $currentVersion"
+          echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
           newVersion=$(git semver --increment ${{ github.event_name }} --from $currentVersion)
           echo "New version: $newVersion"
           echo "::set-output name=newVersion::$newVersion"
+
+      # - name: Determine new version
+      #   id: determine-version
+      #   run: |
+      #     currentVersion=${{ steps.fetch-tag.outputs.LATEST_TAG }}
+      #     echo "Latest tag: $currentVersion"
+      #     newVersion=$(git semver --increment ${{ github.event_name }} --from $currentVersion)
+      #     echo "New version: $newVersion"
+      #     echo "::set-output name=newVersion::$newVersion"
 
       - name: Set version as an environment variable
         run: echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
