@@ -32,11 +32,13 @@ jobs:
       - uses: actions/setup-node@v4 # Example for Node.js, adjust for your environment
         with:
           node-version: 16
-      - run: npm install -g git-semver # Install git-semver for history analysis
+      - run: |
+          npm install -g git-semver # Install git-semver for history analysis
+          git-semver -i --tag-pattern "v*.*.*"
 
-      - name: Analyze git history
-        id: analyze-history
-        run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
+      # - name: Analyze git history
+      #   id: analyze-history
+      #   run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
 
       - name: Extract version information
         id: extract-version
