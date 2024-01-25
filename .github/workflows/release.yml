@@ -31,12 +31,22 @@ jobs:
       - name: Install git-semver utility
         run: npm install -g git-semver
 
+      # - name: Fetch the latest tag
+      #   id: fetch-latest-tag
+      #   run: |
+      #     latestTag=$(git tag -l | sort -V | tail -n 1)
+      #     echo "Latest tag: $latestTag"
+      #     echo "::set-output name=latestTag::$latestTag"
+
       - name: Fetch the latest tag
-        id: fetch-latest-tag
         run: |
+          git fetch --tags
           latestTag=$(git tag -l | sort -V | tail -n 1)
-          echo "Latest tag: $latestTag"
-          echo "::set-output name=latestTag::$latestTag"
+          echo "Latest tag: $latestTag" >> $GITHUB_ENV
+
+      - name: Set output for later steps
+        run: echo "::set-output name=latestTag::$latestTag"
+
 
       - name: Determine new version
         id: determine-version
