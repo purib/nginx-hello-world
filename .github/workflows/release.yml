@@ -116,15 +116,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=v${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
 
           git tag $RELEASE_VERSION
           git push origin $RELEASE_VERSION
-          releaseNotes="Release $newVersion"
+          releaseNotes="Release $RELEASE_VERSION"
 
           # Check if the release already exists
-          if ! gh release view $NEW_VERSION >/dev/null 2>&1; then
-            gh release create $NEW_VERSION -t "$NEW_VERSION" -n "$releaseNotes"
+          if ! gh release view $RELEASE_VERSION >/dev/null 2>&1; then
+            gh release create $RELEASE_VERSION -t "$RELEASE_VERSION" -n "$releaseNotes"
           fi
 
 
