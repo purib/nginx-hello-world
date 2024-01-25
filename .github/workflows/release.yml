@@ -23,8 +23,13 @@ jobs:
       # Checkout the code
       - uses: actions/checkout@v3
 
-      - uses: wemogy/next-release-version-action@1.0.1
-        id: release-version
+      # - uses: wemogy/next-release-version-action@1.0.1
+      #   id: release-version
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     branch: 'release/v1.1'
+
+      - uses: actions/setup-node@v4 # Example for Node.js, adjust for your environment
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: 'release/v1.1'
+          node-version: 16
+      - run: npm install -g git-semver # Install git-semver for history analysis
