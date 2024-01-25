@@ -23,54 +23,17 @@ jobs:
       # Checkout the code
       - uses: actions/checkout@v3
 
-      # Determine the next semantic version based on release type
-      - uses: actions/github-script@v6
-        id: determine-version
-        with:
-          script: |
-            const releaseType = '${{ github.event.inputs.ReleaseType }}';
-            const latestTag = await github.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            const currentVersion = latestTag.data.tag_name.slice(1); // Remove leading 'v'
-            const [major, minor, patch] = currentVersion.split('.').map(Number);
-
-            let newVersion;
-            switch (releaseType) {
-              case 'MAJOR':
-                newVersion = `${major + 1}.0.0`;
-                break;
-              case 'MINOR':
-                newVersion = `${major}.${minor + 1}.0`;
-                break;
-              case 'PATCH':
-                newVersion = `${major}.${minor}.${patch + 1}`;
-                break;
-              case 'BETA':
-                newVersion = `${major}.${minor}.${patch}-beta.1`;
-                break;
-            }
-
-            core.setOutput('version', newVersion);
-
-      # Set the version as an environment variable
-      - name: Set version environment variable
-        run: echo "RELEASE_VERSION=${{ steps.determine-version.outputs.version }}" >> $GITHUB_ENV
-
-      # # Build the code (replace with your actual build commands)
-      # - name: Build
-      #   run: npm install && npm run build
-
-      # Create a tag and release
-      - name: Create Release
-        uses: actions/create-release@v1
+      # install requirements
+      - name: Install requirements
+        run: poetry install --only semver
+      # semantic release
+      - name: Python Semantic Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.RELEASE_VERSION }}
-          release_name: Release v${{ env.RELEASE_VERSION }}
-          body: |
-            **Release Notes:**
-
-            (Add release notes here)
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -o pipefail
+          # Set git details
+          git config --global user.name "github-actions"
+          git config --global user.email "bpuri@pfizer.com"
+          # run semantic-release
+          poetry run semantic-release publish -v DEBUG -D commit_author="github-actions <bpuri@pfizer.com>"
