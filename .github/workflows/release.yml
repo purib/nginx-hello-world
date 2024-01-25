@@ -58,7 +58,8 @@ jobs:
           echo "Latest tag: $latestTag"
           echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
 
-      - name: Set output for later steps
+      - name: Determine new version
+        id: determine-version
         run: |
           echo "LATEST_TAG=${{ steps.fetch-tag.outputs.LATEST_TAG }}" >> $GITHUB_ENV
           currentVersion=${{ env.LATEST_TAG }}
@@ -85,9 +86,13 @@ jobs:
       #     echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
 
       - name: Set version as an environment variable
-        run: echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
-
-      - name: Tag and push
         run: |
+          echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
           git tag $RELEASE_VERSION
           git push origin $RELEASE_VERSION
+
+
+      # - name: Tag and push
+      #   run: |
+      #     git tag $RELEASE_VERSION
+      #     git push origin $RELEASE_VERSION
