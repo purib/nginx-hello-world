@@ -50,6 +50,7 @@ jobs:
       - name: Fetch the latest tag
         id: fetch-tag
         run: |
+          git fetch --tags
           latestTag=$(git tag -l | sort -V | tail -n 1)
           echo "Latest tag: $latestTag"
           echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
