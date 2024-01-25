@@ -116,8 +116,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "RELEASE_VERSION_TEMP=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
-          echo "RELEASE_VERSION=v${{ env.NEW_VERSION }}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${{ steps.determine-version.outputs.newVersion }}" >> $GITHUB_ENV
 
           git tag $RELEASE_VERSION
           git push origin $RELEASE_VERSION
