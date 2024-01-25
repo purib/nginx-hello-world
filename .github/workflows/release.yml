@@ -33,3 +33,11 @@ jobs:
         with:
           node-version: 16
       - run: npm install -g git-semver # Install git-semver for history analysis
+
+      - name: Analyze git history
+        id: analyze-history
+        run: git-semver -i --tag-pattern "v*.*.*" # Analyze history, assuming tags start with "v"
+
+      - name: Extract version information
+        id: extract-version
+        run: echo "::set-output name=new_version::$(cat ${{ steps.analyze-history.outputs.stdout }} | grep 'next version')"
