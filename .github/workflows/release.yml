@@ -131,6 +131,8 @@ jobs:
         run: |            
           echo "Deploying release: $SELECTED_RELEASE"
           # Add deployment logic based on the selected release
+          mkdir -p /var/www/html
+          cd /var/www/html
           curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
           unzip -q release.zip
           rm release.zip
@@ -152,5 +154,6 @@ jobs:
           # Replace this with your actual deployment steps
 
           # Example: Run Docker container
+          cd /var/www/html
           docker build -t mycode:${{ env.SELECTED_RELEASE}} -f Dockerfile .
           docker run -d --name mycode -p 80:80 mycode:${{ env.SELECTED_RELEASE}}
