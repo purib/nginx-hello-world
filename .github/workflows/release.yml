@@ -121,22 +121,21 @@ jobs:
     needs: build-and-release
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Deploying the release to Production
         if: ${{ github.event.inputs.Environment == 'prod' }}
         env:
           SELECTED_RELEASE: ${{ needs.build-and-release.outputs.SELECTED_RELEASE }}
         run: |            
           echo "Deploying release: $SELECTED_RELEASE"
-          # Add deployment logic based on the selected release
-          cd /var/www/html
-          curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
-          unzip -q release.zip
-          rm release.zip
-          mv "${{ github.repository }}-${release_tag}"/* .
-          rmdir "${{ github.repository }}-${release_tag}"
+
+      - name: Checkout code for selected release
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.SELECTED_RELEASE }}
+
+      - name: Copy files to target directory
+        run: |
+          cp -r $GITHUB_WORKSPACE/* /var/www/html
 
       - name: Cleanup existing Docker resources
         run: |
