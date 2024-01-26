@@ -131,7 +131,6 @@ jobs:
         run: |            
           echo "Deploying release: $SELECTED_RELEASE"
           # Add deployment logic based on the selected release
-          mkdir -p /var/www/html
           cd /var/www/html
           curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
           unzip -q release.zip
