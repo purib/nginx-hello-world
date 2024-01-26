@@ -114,7 +114,7 @@ jobs:
           echo "SELECTED_RELEASE=$selectedRelease" >> $GITHUB_ENV
 
     outputs:
-      SELECTED_RELEASE: ${{ steps.determine-release.outputs.SELECTED_RELEASE }}
+      SELECTED_RELEASE: ${{ env.SELECTED_RELEASE }}
 
   deploy:
     runs-on: github-self-hosted
