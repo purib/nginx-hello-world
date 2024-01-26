@@ -45,7 +45,6 @@ jobs:
         run: npm install -g semver
 
       - name: Fetch the latest tag
-        if: ${{ github.event.inputs.Environment == 'test' }}
         id: fetch-tag
         run: |
           git fetch --tags
@@ -101,21 +100,14 @@ jobs:
             gh release create $NEW_VERSION -t "$NEW_VERSION" -n "$releaseNotes"
           fi
 
-      - name: Fetch releases
-        if: ${{ github.event.inputs.Environment == 'prod' }}
-        id: fetch-releases
-        run: |
-          releases=$(gh release list --json name -L 1)
-          echo "RELEASES=$releases" >> $GITHUB_ENV
-
       - name: Determine release to deploy in Production
         id: determine-release
         run: |
           selectedRelease=${{ github.event.inputs.Release }}
-          allReleases=${{ env.RELEASES }}
+          allReleases=${{ env.LATEST_TAG }}
           
           if [ "$selectedRelease" == "latest" ]; then
-            selectedRelease=$(echo "$allReleases" | jq -r '.[0].name')
+            selectedRelease=$(echo "$allReleases")
           fi
 
           echo "Selected release: $selectedRelease"
