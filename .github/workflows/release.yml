@@ -122,13 +122,10 @@ jobs:
 
       - name: Deploying the release to Production
         if: ${{ github.event.inputs.Environment == 'prod' }}
-        run: |          
-          # Access the output variable from the previous job
-          selectedRelease=$(cat ${{ needs.build-and-release.outputs.id }}/GITHUB_ENV | grep SELECTED_RELEASE | cut -d'=' -f2 | tr -d '"')
-  
+        env:
+          SELECTED_RELEASE: ${{ steps.build-and-releasen.outputs.SELECTED_RELEASE }}
+        run: |            
           # Add deployment logic based on the selected release
-          # For example, download and deploy artifacts from the release
-          # Replace this with your deployment steps
           echo "Deploying release: $SELECTED_RELEASE"
           # curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
           # unzip -q release.zip
