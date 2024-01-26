@@ -133,8 +133,9 @@ jobs:
         with:
           ref: ${{ env.SELECTED_RELEASE }}
 
-      - name: Copy files to target directory
+      - name: Cleanup and Copy files to target directory
         run: |
+          rm -rf /var/www/html/* 
           cp -r $GITHUB_WORKSPACE/* /var/www/html
 
       - name: Cleanup existing Docker resources
@@ -153,5 +154,6 @@ jobs:
 
           # Example: Run Docker container
           cd /var/www/html
-          docker build -t mycode:${{ env.SELECTED_RELEASE}} -f Dockerfile .
-          docker run -d --name mycode -p 80:80 mycode:${{ env.SELECTED_RELEASE}}
+          DOCKER_TAG = ${{ env.SELECTED_RELEASE }}
+          docker build -t mycode:latest -f Dockerfile .
+          docker run -d --name mycode -p 80:80 mycode:latest
