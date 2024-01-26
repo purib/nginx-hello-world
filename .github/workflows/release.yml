@@ -116,44 +116,44 @@ jobs:
     outputs:
       SELECTED_RELEASE: ${{ env.SELECTED_RELEASE }}
 
-  deploy:
-    runs-on: github-self-hosted
-    needs: build-and-release
+  # deploy:
+  #   runs-on: github-self-hosted
+  #   needs: build-and-release
 
-    steps:
-      - name: Deploying the release to Production
-        if: ${{ github.event.inputs.Environment == 'prod' }}
-        env:
-          SELECTED_RELEASE: ${{ needs.build-and-release.outputs.SELECTED_RELEASE }}
-        run: |            
-          echo "Deploying release: $SELECTED_RELEASE"
+  #   steps:
+  #     - name: Deploying the release to Production
+  #       if: ${{ github.event.inputs.Environment == 'prod' }}
+  #       env:
+  #         SELECTED_RELEASE: ${{ needs.build-and-release.outputs.SELECTED_RELEASE }}
+  #       run: |            
+  #         echo "Deploying release: $SELECTED_RELEASE"
 
-      - name: Checkout code for selected release
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ env.SELECTED_RELEASE }}
+  #     - name: Checkout code for selected release
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ env.SELECTED_RELEASE }}
 
-      - name: Cleanup and Copy files to target directory
-        run: |
-          rm -rf /var/www/html/* 
-          cp -r $GITHUB_WORKSPACE/* /var/www/html
+  #     - name: Cleanup and Copy files to target directory
+  #       run: |
+  #         rm -rf /var/www/html/* 
+  #         cp -r $GITHUB_WORKSPACE/* /var/www/html
 
-      - name: Cleanup existing Docker resources
-        run: |
-          # Stop and remove existing containers
-          docker stop your-container-name || true
-          docker rm your-container-name || true
-          # Remove existing Docker image
-          docker rmi your-image-name:your-tag || true
+  #     - name: Cleanup existing Docker resources
+  #       run: |
+  #         # Stop and remove existing containers
+  #         docker stop your-container-name || true
+  #         docker rm your-container-name || true
+  #         # Remove existing Docker image
+  #         docker rmi your-image-name:your-tag || true
 
-      - name: Deploy Docker container
-        run: |
-          # Add your deployment logic here
-          # For example, restart Docker containers or deploy to a Kubernetes cluster
-          # Replace this with your actual deployment steps
+  #     - name: Deploy Docker container
+  #       run: |
+  #         # Add your deployment logic here
+  #         # For example, restart Docker containers or deploy to a Kubernetes cluster
+  #         # Replace this with your actual deployment steps
 
-          # Example: Run Docker container
-          cd /var/www/html
-          DOCKER_TAG = ${{ env.SELECTED_RELEASE }}
-          docker build -t mycode:latest -f Dockerfile .
-          docker run -d --name mycode -p 80:80 mycode:latest
+  #         # Example: Run Docker container
+  #         cd /var/www/html
+  #         DOCKER_TAG = ${{ env.SELECTED_RELEASE }}
+  #         docker build -t mycode:latest -f Dockerfile .
+  #         docker run -d --name mycode -p 80:80 mycode:latest
