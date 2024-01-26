@@ -112,7 +112,9 @@ jobs:
 
           echo "Selected release: $selectedRelease"
           echo "SELECTED_RELEASE=$selectedRelease" >> $GITHUB_ENV
-          echo "::set-output name=SELECTED_RELEASE::$selectedRelease" 
+
+    outputs:
+      SELECTED_RELEASE: ${{ steps.determine-release.outputs.SELECTED_RELEASE }}
 
   deploy:
     runs-on: github-self-hosted
