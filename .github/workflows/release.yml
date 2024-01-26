@@ -137,6 +137,14 @@ jobs:
           mv "${{ github.repository }}-${release_tag}"/* .
           rmdir "${{ github.repository }}-${release_tag}"
 
+      - name: Cleanup existing Docker resources
+        run: |
+          # Stop and remove existing containers
+          docker stop your-container-name || true
+          docker rm your-container-name || true
+          # Remove existing Docker image
+          docker rmi your-image-name:your-tag || true
+
       - name: Deploy Docker container
         run: |
           # Add your deployment logic here
