@@ -21,6 +21,10 @@ on:
         options:
         - test
         - prod
+      Release:
+        description: 'Production release name'
+        required: false
+        default: 'latest'
 
 jobs:
   build-and-release:
@@ -96,3 +100,31 @@ jobs:
           if ! gh release view $NEW_VERSION >/dev/null 2>&1; then
             gh release create $NEW_VERSION -t "$NEW_VERSION" -n "$releaseNotes"
           fi
+
+      - name: Fetch releases
+        if: ${{ github.event.inputs.Environment == 'prod' }}
+        id: fetch-releases
+        run: |
+          releases=$(gh release list --json name -L 1)
+          echo "RELEASES=$releases" >> $GITHUB_ENV
+
+      - name: Determine release to deploy in Production
+        id: determine-release
+        run: |
+          selectedRelease=${{ github.event.inputs.Release }}
+          allReleases=${{ env.RELEASES }}
+          
+          if [ "$selectedRelease" == "latest" ]; then
+            selectedRelease=$(echo "$allReleases" | jq -r '.[0].name')
+          fi
+
+          echo "Selected release: $selectedRelease"
+          echo "SELECTED_RELEASE=$selectedRelease" >> $GITHUB_ENV
+
+      - name: Deploying the release to Production
+        if: ${{ github.event.inputs.Environment == 'prod' }}
+        run: |          
+          # Add deployment logic based on the selected release
+          # For example, download and deploy artifacts from the release
+          # Replace this with your deployment steps
+          echo "Deploying release: $SELECTED_RELEASE"
