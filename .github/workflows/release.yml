@@ -112,6 +112,7 @@ jobs:
 
           echo "Selected release: $selectedRelease"
           echo "SELECTED_RELEASE=$selectedRelease" >> $GITHUB_ENV
+          echo "::set-output name=SELECTED_RELEASE::$selectedRelease" 
 
   deploy:
     runs-on: github-self-hosted
@@ -124,7 +125,7 @@ jobs:
       - name: Deploying the release to Production
         if: ${{ github.event.inputs.Environment == 'prod' }}
         env:
-          SELECTED_RELEASE: ${{ steps.determine-release.outputs.SELECTED_RELEASE }}
+          SELECTED_RELEASE: ${{ needs.build-and-release.outputs.SELECTED_RELEASE }}
         run: |            
           # Add deployment logic based on the selected release
           echo "Deploying release: $SELECTED_RELEASE"
