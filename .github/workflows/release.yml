@@ -129,20 +129,20 @@ jobs:
         env:
           SELECTED_RELEASE: ${{ needs.build-and-release.outputs.SELECTED_RELEASE }}
         run: |            
-          # Add deployment logic based on the selected release
           echo "Deploying release: $SELECTED_RELEASE"
-          # curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
-          # unzip -q release.zip
-          # rm release.zip
-          # mv "${{ github.repository }}-${release_tag}"/* .
-          # rmdir "${{ github.repository }}-${release_tag}"
+          # Add deployment logic based on the selected release
+          curl -L -o release.zip "https://github.com/${{ github.repository }}/archive/${SELECTED_RELEASE}.zip"
+          unzip -q release.zip
+          rm release.zip
+          mv "${{ github.repository }}-${release_tag}"/* .
+          rmdir "${{ github.repository }}-${release_tag}"
 
-      # - name: Deploy Docker container
-      #   run: |
-      #     # Add your deployment logic here
-      #     # For example, restart Docker containers or deploy to a Kubernetes cluster
-      #     # Replace this with your actual deployment steps
+      - name: Deploy Docker container
+        run: |
+          # Add your deployment logic here
+          # For example, restart Docker containers or deploy to a Kubernetes cluster
+          # Replace this with your actual deployment steps
 
-      #     # Example: Run Docker container
-      #     docker-compose -f docker-compose.yml up -d
-      #     docker run -d --name my-container -p 8080:80 .
+          # Example: Run Docker container
+          docker build -t mycode:${{ env.SELECTED_RELEASE}} -f Dockerfile .
+          docker run -d --name mycode -p 80:80 mycode:${{ env.SELECTED_RELEASE}}
