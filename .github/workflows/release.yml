@@ -124,7 +124,7 @@ jobs:
       - name: Deploying the release to Production
         if: ${{ github.event.inputs.Environment == 'prod' }}
         env:
-          SELECTED_RELEASE: ${{ steps.build-and-releasen.outputs.SELECTED_RELEASE }}
+          SELECTED_RELEASE: ${{ steps.determine-release.outputs.SELECTED_RELEASE }}
         run: |            
           # Add deployment logic based on the selected release
           echo "Deploying release: $SELECTED_RELEASE"
