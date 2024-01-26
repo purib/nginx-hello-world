@@ -115,6 +115,7 @@ jobs:
 
   deploy:
     runs-on: github-self-hosted
+    needs: build-and-release
 
     steps:
       - name: Checkout code
