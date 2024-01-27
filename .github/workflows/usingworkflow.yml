@@ -26,7 +26,7 @@ on:
 
 jobs:
   call-semantic-versioning:
-    uses: ./.github/workflows/semantic.yml@master
+    uses: ./.github/workflows/semantic.yml
     with:
       ReleaseType: ${{ github.event.inputs.ReleaseType }}
       Environment: ${{ github.event.inputs.Environment }}
