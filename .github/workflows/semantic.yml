@@ -1,0 +1,115 @@
+name: Semantic Versioning
+
+on:
+  workflow_dispatch:
+    inputs:
+      ReleaseType:
+        type: choice
+        description: 'Type of Release'
+        required: true
+        options:
+          - MAJOR
+          - MINOR
+          - PATCH
+          - BETA
+      Environment:
+        type: choice
+        description: 'The environment to deploy to'
+        required: true
+        options:
+          - test
+          - prod
+      Release:
+        description: 'Production release name'
+        required: false
+        default: 'latest'
+
+jobs:
+  semantic-versioning:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        if: ${{ github.event.inputs.Environment == 'test' }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install semver
+        if: ${{ github.event.inputs.Environment == 'test' }}
+        run: npm install -g semver
+
+      - name: Fetch the latest tag
+        id: fetch-tag
+        run: |
+          git fetch --tags
+          latestTag=$(git tag -l | sort -V | tail -n 1)
+          echo "Latest tag: $latestTag"
+          echo "LATEST_TAG=$latestTag" >> $GITHUB_ENV
+
+      - name: Determine new version
+        if: ${{ github.event.inputs.Environment == 'test' }}
+        id: determine-version
+        run: |
+          currentVersion=${{ env.LATEST_TAG }}
+          releaseType=${{ github.event.inputs.ReleaseType }}
+          
+          case $releaseType in
+            MAJOR)
+              newVersion=$(semver --increment major $currentVersion)
+              ;;
+            MINOR)
+              newVersion=$(semver --increment minor $currentVersion)
+              ;;
+            PATCH)
+              newVersion=$(semver --increment patch $currentVersion)
+              ;;
+            BETA)
+              if [[ $currentVersion =~ -beta\.([0-9]+)$ ]]; then
+                betaCount=$((BASH_REMATCH[1]+1))
+              else
+                betaCount=1
+              fi
+              newVersion="${currentVersion}-beta.${betaCount}"
+              ;;
+            *)
+              echo "Invalid ReleaseType provided."
+              exit 1
+              ;;
+          esac
+
+          echo "New version: $newVersion"
+          echo "NEW_VERSION=$newVersion" >> $GITHUB_ENV
+
+      - name: Create Tag and Release
+        if: ${{ github.event.inputs.Environment == 'test' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |          
+          git tag $NEW_VERSION
+          git push origin $NEW_VERSION
+          releaseNotes="Release $newVersion"
+
+          # Check if the release already exists
+          if ! gh release view $NEW_VERSION >/dev/null 2>&1; then
+            gh release create $NEW_VERSION -t "$NEW_VERSION" -n "$releaseNotes"
+          fi
+
+      - name: Determine release to deploy in Production
+        id: determine-release
+        run: |
+          selectedRelease=${{ github.event.inputs.Release }}
+          allReleases=${{ env.LATEST_TAG }}
+          
+          if [ "$selectedRelease" == "latest" ]; then
+            selectedRelease=$(echo "$allReleases")
+          fi
+
+          echo "Selected release: $selectedRelease"
+          echo "SELECTED_RELEASE=$selectedRelease" >> $GITHUB_ENV
+
+    outputs:
+      SELECTED_RELEASE: ${{ env.SELECTED_RELEASE }}
