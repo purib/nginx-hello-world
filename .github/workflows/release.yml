@@ -141,10 +141,10 @@ jobs:
       - name: Cleanup existing Docker resources
         run: |
           # Stop and remove existing containers
-          docker stop your-container-name || true
-          docker rm your-container-name || true
+          docker stop mycode || true
+          docker rm mycode || true
           # Remove existing Docker image
-          docker rmi your-image-name:your-tag || true
+          #docker rmi your-image-name:your-tag || true
 
       - name: Deploy Docker container
         run: |
