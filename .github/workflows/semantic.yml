@@ -1,24 +1,26 @@
 name: Semantic Versioning
 
 on:
+  workflow_call:
+    inputs:
+      ReleaseType:
+        description: 'Type of Release'
+        required: true
+        type: string
+      Environment:
+        type: string
+        description: 'The environment to deploy to'
+        required: true
   workflow_dispatch:
     inputs:
       ReleaseType:
-        type: choice
         description: 'Type of Release'
         required: true
-        options:
-          - MAJOR
-          - MINOR
-          - PATCH
-          - BETA
+        type: string
       Environment:
-        type: choice
+        type: string
         description: 'The environment to deploy to'
         required: true
-        options:
-          - test
-          - prod
 
 jobs:
   semantic-versioning:
