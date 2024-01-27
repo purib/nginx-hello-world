@@ -27,6 +27,6 @@ on:
 jobs:
   call-semantic-versioning:
     if: ${{ github.event.inputs.Environment == 'test' }}
-    uses: purib/sharedworflows/.github/workflows/semantic.yml@main
+    uses: purib/sharedworflows/.github/workflows/semantic.yml
     with:
       ReleaseType: ${{ github.event.inputs.ReleaseType }}
