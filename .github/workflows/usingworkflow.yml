@@ -1,0 +1,33 @@
+name: My Build and Release Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      ReleaseType:
+        type: choice
+        description: 'Type of Release'
+        required: true
+        options:
+          - MAJOR
+          - MINOR
+          - PATCH
+          - BETA
+      Environment:
+        type: choice
+        description: 'The environment to deploy to'
+        required: true
+        options:
+          - test
+          - prod
+      Release:
+        description: 'Production release name'
+        required: false
+        default: 'latest'
+
+jobs:
+  semantic-versioning:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Use Shared Semantic Versioning Workflow
+        uses: path/to/your/shared-workflow-repo@main
