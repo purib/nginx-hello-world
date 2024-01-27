@@ -30,7 +30,7 @@ jobs:
     
     steps:
       - name: Use Shared Semantic Versioning Workflow
-        uses: purib/nginx-hello-world@main
+        uses: purib/nginx-hello-world@master
         with:
           path: .github/workflows/semantic.yml
           ReleaseType: ${{ github.event.inputs.ReleaseType }}
