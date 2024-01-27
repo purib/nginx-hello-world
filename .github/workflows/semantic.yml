@@ -19,10 +19,6 @@ on:
         options:
           - test
           - prod
-      Release:
-        description: 'Production release name'
-        required: false
-        default: 'latest'
 
 jobs:
   semantic-versioning:

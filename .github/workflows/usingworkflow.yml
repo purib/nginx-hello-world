@@ -25,13 +25,8 @@ on:
         default: 'latest'
 
 jobs:
-  semantic-versioning:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Use Shared Semantic Versioning Workflow
-        uses: ./.github/workflows/semantic.yml
-        with:
-          ReleaseType: ${{ github.event.inputs.ReleaseType }}
-          Environment: ${{ github.event.inputs.Environment }}
-          Release: ${{ github.event.inputs.Release }}
+  call-semantic-versioning:
+    uses: ./.github/workflows/semantic.yml@main
+    with:
+      ReleaseType: ${{ github.event.inputs.ReleaseType }}
+      Environment: ${{ github.event.inputs.Environment }}
