@@ -1,4 +1,4 @@
-name: My Build and Release Workflow
+name: Use Shared Workflow
 
 on:
   workflow_dispatch:
@@ -27,7 +27,11 @@ on:
 jobs:
   semantic-versioning:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Use Shared Semantic Versioning Workflow
-        uses: path/to/your/shared-workflow-repo@main
+        uses: purib/nginx-hello-world@main
+        with:
+          ReleaseType: ${{ github.event.inputs.ReleaseType }}
+          Environment: ${{ github.event.inputs.Environment }}
+          Release: ${{ github.event.inputs.Release }}
